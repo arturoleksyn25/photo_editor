@@ -3,10 +3,9 @@ import { ref, watch } from 'vue'
 import { useImageEditorStore } from '../stores/imageEditor'
 
 const store = useImageEditorStore()
-const selectedFile = ref<File[]>([])
+const selectedFile = ref<File | null>(null)
 
-watch(selectedFile, async (files) => {
-  const file = files[0]
+watch(selectedFile, async (file) => {
   if (!file) return
 
   const bitmap = await createImageBitmap(file)
@@ -18,7 +17,7 @@ watch(selectedFile, async (files) => {
     mimeType: file.type,
   })
 
-  selectedFile.value = []
+  selectedFile.value = null
 })
 </script>
 
