@@ -22,3 +22,43 @@ export function cropBuffer(source: PixelBuffer, rect: Rect | null): PixelBuffer 
   }
   return { data: cropped, width, height }
 }
+
+export function transformPixel(
+  r: number,
+  g: number,
+  b: number,
+  brightness: number,
+  contrast: number,
+  saturation: number
+): [number, number, number] {
+  let nr = r * brightness
+  let ng = g * brightness
+  let nb = b * brightness
+
+  nr = (nr - 128) * contrast + 128
+  ng = (ng - 128) * contrast + 128
+  nb = (nb - 128) * contrast + 128
+
+  const luminance = 0.299 * nr + 0.587 * ng + 0.114 * nb
+  nr = luminance + (nr - luminance) * saturation
+  ng = luminance + (ng - luminance) * saturation
+  nb = luminance + (nb - luminance) * saturation
+
+  return [clamp8(nr), clamp8(ng), clamp8(nb)]
+}
+
+export function applyColorAdjustments(
+  buffer: PixelBuffer,
+  brightness: number,
+  contrast: number,
+  saturation: number
+): PixelBuffer {
+  const data = new Uint8ClampedArray(buffer.data)
+  for (let i = 0; i < data.length; i += 4) {
+    const [r, g, b] = transformPixel(data[i], data[i + 1], data[i + 2], brightness, contrast, saturation)
+    data[i] = r
+    data[i + 1] = g
+    data[i + 2] = b
+  }
+  return { data, width: buffer.width, height: buffer.height }
+}
