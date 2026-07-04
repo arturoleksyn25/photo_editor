@@ -40,18 +40,14 @@ function scheduleDraw() {
 
 function draw() {
   const canvas = canvasRef.value
-  if (!canvas || !original.value) return
+  if (!canvas || !original.value || !previewSource.value) return
 
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  let result: PixelBuffer
-  if (showingOriginal.value) {
-    result = bitmapToPixelBuffer(original.value.bitmap, PREVIEW_MAX_DIMENSION)
-  } else {
-    if (!previewSource.value) return
-    result = renderPipeline(previewSource.value, settings.value)
-  }
+  const result: PixelBuffer = showingOriginal.value
+    ? previewSource.value
+    : renderPipeline(previewSource.value, settings.value)
 
   canvas.width = result.width
   canvas.height = result.height
