@@ -3,7 +3,7 @@ import { onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useImageEditorStore } from '../stores/imageEditor'
 import { renderPipeline } from '../lib/renderPipeline'
-import type { PixelBuffer } from '../types/editor'
+import type { EditorSettings, PixelBuffer, Rect } from '../types/editor'
 
 const PREVIEW_MAX_DIMENSION = 1200
 
@@ -12,6 +12,7 @@ const { original, settings, showingOriginal } = storeToRefs(store)
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const previewSource = ref<PixelBuffer | null>(null)
+let previewScale = 1
 let frameScheduled = false
 
 function bitmapToPixelBuffer(bitmap: ImageBitmap, maxDimension?: number): PixelBuffer {
@@ -27,6 +28,21 @@ function bitmapToPixelBuffer(bitmap: ImageBitmap, maxDimension?: number): PixelB
   ctx.drawImage(bitmap, 0, 0, width, height)
   const imageData = ctx.getImageData(0, 0, width, height)
   return { data: imageData.data, width: imageData.width, height: imageData.height }
+}
+
+// `settings.crop` is always expressed in the ORIGINAL (full-resolution) image's
+// pixel coordinates (see CropStage.vue) so that export always crops the true
+// original. `previewSource` is a downscaled cache of that same original, so a
+// full-res crop rect must be scaled down before it can be applied to it —
+// applying it unscaled would ask cropBuffer for a region larger than the
+// downscaled buffer actually contains.
+function scaleRectToPreview(rect: Rect, scale: number): Rect {
+  return {
+    x: Math.round(rect.x * scale),
+    y: Math.round(rect.y * scale),
+    width: Math.max(1, Math.round(rect.width * scale)),
+    height: Math.max(1, Math.round(rect.height * scale)),
+  }
 }
 
 function scheduleDraw() {
@@ -45,17 +61,33 @@ function draw() {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  const result: PixelBuffer = showingOriginal.value
-    ? previewSource.value
-    : renderPipeline(previewSource.value, settings.value)
+  let result: PixelBuffer
+  if (showingOriginal.value) {
+    result = previewSource.value
+  } else {
+    const previewSettings: EditorSettings = {
+      ...settings.value,
+      crop: settings.value.crop ? scaleRectToPreview(settings.value.crop, previewScale) : null,
+    }
+    result = renderPipeline(previewSource.value, previewSettings)
+  }
 
   canvas.width = result.width
   canvas.height = result.height
   ctx.putImageData(new ImageData(result.data as any, result.width, result.height), 0, 0)
 }
 
+function cachePreviewSource(bitmap: ImageBitmap) {
+  previewScale = Math.min(1, PREVIEW_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height))
+  previewSource.value = bitmapToPixelBuffer(bitmap, PREVIEW_MAX_DIMENSION)
+}
+
 watch(original, (value) => {
-  previewSource.value = value ? bitmapToPixelBuffer(value.bitmap, PREVIEW_MAX_DIMENSION) : null
+  if (value) {
+    cachePreviewSource(value.bitmap)
+  } else {
+    previewSource.value = null
+  }
   scheduleDraw()
 })
 
@@ -63,7 +95,7 @@ watch([settings, showingOriginal], scheduleDraw, { deep: true })
 
 onMounted(() => {
   if (original.value) {
-    previewSource.value = bitmapToPixelBuffer(original.value.bitmap, PREVIEW_MAX_DIMENSION)
+    cachePreviewSource(original.value.bitmap)
   }
   scheduleDraw()
 })
