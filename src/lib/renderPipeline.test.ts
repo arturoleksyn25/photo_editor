@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { cropBuffer, transformPixel, applyColorAdjustments, applyFilter } from './renderPipeline'
-import type { PixelBuffer } from '../types/editor'
+import { cropBuffer, transformPixel, applyColorAdjustments, applyFilter, renderPipeline } from './renderPipeline'
+import { createDefaultSettings } from '../types/editor'
+import type { EditorSettings, PixelBuffer } from '../types/editor'
 
 function makeSampleBuffer(): PixelBuffer {
   return {
@@ -108,5 +109,37 @@ describe('applyFilter', () => {
     expect(result.data[0]).toBe(255)
     expect(result.data[1]).toBe(255)
     expect(result.data[2]).toBeCloseTo(239, 0)
+  })
+})
+
+describe('renderPipeline', () => {
+  it('composes crop, color adjustments, and filter in sequence', () => {
+    const source = {
+      width: 2,
+      height: 1,
+      data: new Uint8ClampedArray([
+        50, 50, 50, 255,
+        100, 100, 100, 255,
+      ]),
+    }
+    const settings: EditorSettings = {
+      crop: { x: 1, y: 0, width: 1, height: 1 },
+      brightness: 2,
+      contrast: 1,
+      saturation: 1,
+      filter: 'greyscale',
+    }
+
+    const result = renderPipeline(source, settings)
+
+    expect(result.width).toBe(1)
+    expect(result.height).toBe(1)
+    expect(Array.from(result.data)).toEqual([200, 200, 200, 255])
+  })
+
+  it('is a no-op end-to-end under default settings', () => {
+    const source = { width: 1, height: 1, data: new Uint8ClampedArray([10, 20, 30, 255]) }
+    const result = renderPipeline(source, createDefaultSettings())
+    expect(Array.from(result.data)).toEqual([10, 20, 30, 255])
   })
 })

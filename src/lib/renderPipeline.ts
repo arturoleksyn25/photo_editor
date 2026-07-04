@@ -1,4 +1,4 @@
-import type { FilterType, PixelBuffer, Rect } from '../types/editor'
+import type { EditorSettings, FilterType, PixelBuffer, Rect } from '../types/editor'
 
 export function clamp8(value: number): number {
   return Math.min(255, Math.max(0, value))
@@ -87,4 +87,10 @@ export function applyFilter(buffer: PixelBuffer, filter: FilterType): PixelBuffe
   }
 
   return { data, width: buffer.width, height: buffer.height }
+}
+
+export function renderPipeline(source: PixelBuffer, settings: EditorSettings): PixelBuffer {
+  const cropped = cropBuffer(source, settings.crop)
+  const adjusted = applyColorAdjustments(cropped, settings.brightness, settings.contrast, settings.saturation)
+  return applyFilter(adjusted, settings.filter)
 }
