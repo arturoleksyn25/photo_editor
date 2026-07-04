@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cropBuffer, transformPixel, applyColorAdjustments } from './renderPipeline'
+import { cropBuffer, transformPixel, applyColorAdjustments, applyFilter } from './renderPipeline'
 import type { PixelBuffer } from '../types/editor'
 
 function makeSampleBuffer(): PixelBuffer {
@@ -82,5 +82,31 @@ describe('applyColorAdjustments', () => {
     const result = applyColorAdjustments(buffer, 1.5, 1, 1)
     expect(result.data[3]).toBe(42)
     expect(source[0]).toBe(10)
+  })
+})
+
+describe('applyFilter', () => {
+  it('passes pixels through unchanged for "none"', () => {
+    const buffer = { width: 1, height: 1, data: new Uint8ClampedArray([10, 20, 30, 255]) }
+    const result = applyFilter(buffer, 'none')
+    expect(Array.from(result.data)).toEqual([10, 20, 30, 255])
+    expect(result.data).not.toBe(buffer.data)
+  })
+
+  it('converts every channel to luminance for "greyscale"', () => {
+    const buffer = { width: 1, height: 1, data: new Uint8ClampedArray([200, 100, 50, 255]) }
+    const result = applyFilter(buffer, 'greyscale')
+    expect(result.data[0]).toBe(result.data[1])
+    expect(result.data[1]).toBe(result.data[2])
+    expect(result.data[0]).toBeCloseTo(124, 0)
+    expect(result.data[3]).toBe(255)
+  })
+
+  it('applies the sepia matrix and clamps at 255', () => {
+    const buffer = { width: 1, height: 1, data: new Uint8ClampedArray([255, 255, 255, 255]) }
+    const result = applyFilter(buffer, 'sepia')
+    expect(result.data[0]).toBe(255)
+    expect(result.data[1]).toBe(255)
+    expect(result.data[2]).toBeCloseTo(239, 0)
   })
 })

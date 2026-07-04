@@ -1,4 +1,4 @@
-import type { PixelBuffer, Rect } from '../types/editor'
+import type { FilterType, PixelBuffer, Rect } from '../types/editor'
 
 export function clamp8(value: number): number {
   return Math.min(255, Math.max(0, value))
@@ -60,5 +60,31 @@ export function applyColorAdjustments(
     data[i + 1] = g
     data[i + 2] = b
   }
+  return { data, width: buffer.width, height: buffer.height }
+}
+
+export function applyFilter(buffer: PixelBuffer, filter: FilterType): PixelBuffer {
+  const data = new Uint8ClampedArray(buffer.data)
+  if (filter === 'none') {
+    return { data, width: buffer.width, height: buffer.height }
+  }
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+
+    if (filter === 'greyscale') {
+      const luminance = clamp8(0.299 * r + 0.587 * g + 0.114 * b)
+      data[i] = luminance
+      data[i + 1] = luminance
+      data[i + 2] = luminance
+    } else if (filter === 'sepia') {
+      data[i] = clamp8(0.393 * r + 0.769 * g + 0.189 * b)
+      data[i + 1] = clamp8(0.349 * r + 0.686 * g + 0.168 * b)
+      data[i + 2] = clamp8(0.272 * r + 0.534 * g + 0.131 * b)
+    }
+  }
+
   return { data, width: buffer.width, height: buffer.height }
 }
