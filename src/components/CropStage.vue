@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
 import { storeToRefs } from 'pinia'
 import { useImageEditorStore } from '../stores/imageEditor'
+import type { OriginalImage } from '../stores/imageEditor'
 
 const store = useImageEditorStore()
 const { original } = storeToRefs(store)
@@ -32,23 +33,27 @@ function onCropChange() {
   store.setCrop({ x: data.x, y: data.y, width: data.width, height: data.height })
 }
 
-watch(
-  original,
-  (value) => {
-    destroyCropper()
-    if (!value || !imageRef.value) return
-    const img = imageRef.value
-    img.onload = () => {
-      cropper = new Cropper(img, {
-        viewMode: 1,
-        autoCropArea: 1,
-        crop: onCropChange,
-      })
-    }
-    img.src = bitmapToDataUrl(value.bitmap)
-  },
-  { immediate: true }
-)
+function initCropper(value: OriginalImage | null) {
+  destroyCropper()
+  if (!value || !imageRef.value) return
+  const img = imageRef.value
+  img.onload = () => {
+    cropper = new Cropper(img, {
+      viewMode: 1,
+      autoCropArea: 1,
+      crop: onCropChange,
+    })
+  }
+  img.src = bitmapToDataUrl(value.bitmap)
+}
+
+watch(original, initCropper)
+
+onMounted(() => {
+  if (original.value) {
+    initCropper(original.value)
+  }
+})
 
 onBeforeUnmount(destroyCropper)
 </script>
