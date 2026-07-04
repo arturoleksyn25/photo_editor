@@ -118,13 +118,13 @@ describe('renderPipeline', () => {
       width: 2,
       height: 1,
       data: new Uint8ClampedArray([
-        50, 50, 50, 255,
-        100, 100, 100, 255,
+        10, 10, 10, 255,
+        200, 50, 50, 255,
       ]),
     }
     const settings: EditorSettings = {
       crop: { x: 1, y: 0, width: 1, height: 1 },
-      brightness: 2,
+      brightness: 1.5,
       contrast: 1,
       saturation: 1,
       filter: 'greyscale',
@@ -134,7 +134,12 @@ describe('renderPipeline', () => {
 
     expect(result.width).toBe(1)
     expect(result.height).toBe(1)
-    expect(Array.from(result.data)).toEqual([200, 200, 200, 255])
+    // crop picks the second pixel (200,50,50); brightness*1.5 -> (255,75,75)
+    // after clamping; greyscale luminance of (255,75,75) = 0.299*255 + 0.587*75
+    // + 0.114*75 = 128.82, which rounds to 129 on store. Applying greyscale
+    // BEFORE the brightness adjustment (a wrong pipeline order) would instead
+    // produce 142 here, so this fixture actually distinguishes the two orders.
+    expect(Array.from(result.data)).toEqual([129, 129, 129, 255])
   })
 
   it('is a no-op end-to-end under default settings', () => {
