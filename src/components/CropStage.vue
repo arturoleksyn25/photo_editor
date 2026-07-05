@@ -65,8 +65,9 @@ onBeforeUnmount(destroyCropper)
 </template>
 
 <style scoped>
-.crop-stage img {
-  display: block;
-  max-width: 100%;
+.crop-stage {
+  width: 100%;
+  height: 800px;
+  overflow: hidden;
 }
 </style>

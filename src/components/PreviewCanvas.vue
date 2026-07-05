@@ -102,13 +102,26 @@ onMounted(() => {
 </script>
 
 <template>
-  <canvas ref="canvasRef" class="preview-canvas" />
+  <div class="preview-canvas-container">
+    <canvas ref="canvasRef" class="preview-canvas" />
+   </div> 
 </template>
 
 <style scoped>
 .preview-canvas {
+  display: block;
   max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
   border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.preview-canvas-container {
+  width: 100%;
+  height: 800px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

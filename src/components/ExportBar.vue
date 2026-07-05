@@ -5,7 +5,7 @@ import { renderPipeline } from '../lib/renderPipeline'
 import type { PixelBuffer } from '../types/editor'
 
 const store = useImageEditorStore()
-const { original, settings } = storeToRefs(store)
+const { original, settings, showingOriginal } = storeToRefs(store)
 
 function bitmapToPixelBuffer(bitmap: ImageBitmap): PixelBuffer {
   const canvas = document.createElement('canvas')
@@ -78,8 +78,8 @@ function onToggleViewOriginal() {
 <template>
   <div class="export-bar">
     <v-btn :disabled="!original" @click="onReset">Reset</v-btn>
-    <v-btn :disabled="!original" @click="onToggleViewOriginal">View original</v-btn>
-    <v-btn :disabled="!original" color="primary" @click="exportImage">Download image</v-btn>
+    <v-btn :disabled="!original" :color="showingOriginal ? 'primary' : undefined" @click="onToggleViewOriginal">View original</v-btn>
+    <v-btn :disabled="!original" @click="exportImage">Download image</v-btn>
     <v-btn :disabled="!original" @click="exportOperationsJson">Download JSON</v-btn>
   </div>
 </template>

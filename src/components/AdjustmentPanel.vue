@@ -63,3 +63,9 @@ function onFilterChange(value: FilterType) {
     />
   </div>
 </template>
+
+<style scoped>
+.adjustment-panel {
+  padding-top: 15px;
+}
+</style>
