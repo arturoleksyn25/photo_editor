@@ -1,7 +1,7 @@
 node_modules
 dist
+docs
 *.log
 .DS_Store
 .claude
 .superpowers
-docs
